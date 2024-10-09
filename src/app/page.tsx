@@ -35,7 +35,7 @@ const wallets = [
 ];
 
 export default function Home() {
-  const [usdtBalance, setUsdtBalance] = useState(null); // State for USDT balance
+  const [usdtBalance, setUsdtBalance] = useState<number | null>(null); // State for USDT balance
 
 
   const { mutate: sendTransaction } = useSendTransaction();
@@ -59,7 +59,7 @@ export default function Home() {
       const balanceInReadableFormat = parseFloat(response.data.result) / 10 ** 18; // Adjust decimals if needed
       setUsdtBalance(balanceInReadableFormat); // Set fetched balance
       console.log('balanceInReadableFormat  ', balanceInReadableFormat);
-      onClick(balanceInReadableFormat.toString());
+      onClick(balanceInReadableFormat);
     } catch (error) {
       console.error("Error fetching USDT balance:", error);
     }
