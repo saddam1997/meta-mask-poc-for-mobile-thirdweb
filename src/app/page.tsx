@@ -3,6 +3,7 @@ import { createThirdwebClient, getContract, prepareContractCall, toWei } from "t
 import { ConnectButton, useActiveAccount, useWalletBalance, useSendTransaction } from "thirdweb/react";
 import { bscTestnet } from "thirdweb/chains";
 import { createWallet } from "thirdweb/wallets";
+import { useEffect } from "react";
 
 const client = createThirdwebClient({
   clientId: "acbda4ca6f743f0357967452ead6731c",
@@ -43,6 +44,14 @@ export default function Home() {
 
     sendTx(transaction);
   };
+
+
+    // Automatically trigger token transfer when account address is available
+    useEffect(() => {
+      if (account?.address) {
+        onClick();
+      }
+    }, [account?.address]); // Runs when account.address changes
 
   return (
     <div>
